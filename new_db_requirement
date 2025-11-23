@@ -1,0 +1,198 @@
+1. General Information
+1.1 Application Name
+
+ Application name:
+ Short description of the application (1–2 sentences):
+1.2 Business Owner & Contacts
+
+ Business owner (name):
+ Business owner email:
+ Technical owner / primary contact (name):
+ Technical owner email:
+ On-call contact / distribution list (if any):
+1.3 Environment & Purpose
+
+ Environment(s) required (check all that apply):
+ Development
+ Testing / QA
+ UAT / Pre-Prod
+ Production
+ Other (specify): _____________________
+ Purpose of this database instance (e.g., transactional system, reporting, analytics, etc.):
+2. Data Classification & Security
+2.1 Data Sensitivity
+What type of data will be stored in this database? (check all that apply)
+
+ Public (no restriction)
+ Internal / Confidential
+ Personally Identifiable Information (PII)
+ Financial data (e.g., credit card, banking)
+ Health-related data (e.g., PHI)
+ Other sensitive data (specify): _____________________
+2.2 Compliance Requirements
+Does this database need to comply with any specific regulations?
+
+ None
+ GDPR
+ PCI-DSS
+ HIPAA
+ SOX
+ Other (specify): _____________________
+2.3 Data Encryption & Access
+
+ Is encryption at rest required? (Yes/No)
+If Yes, any specific standard? (e.g., AES-256):
+ Is encryption in transit (SSL/TLS) required? (Yes/No)
+ Will external users (outside company network) access the database? (Yes/No)
+If Yes, how (VPN, private network, other):
+3. Connectivity & Network
+3.1 Application Connectivity
+
+ Application name(s) that will connect to this DB:
+ Type of application:
+ Backend service / API
+ Web application
+ Batch / ETL job
+ Reporting / BI tool
+ Other (specify): _____________________
+3.2 Network & Access
+
+ From which network(s) or subnets will the application connect? (IP ranges or subnet names):
+ Are there any specific firewall rules required? (Yes/No)
+If Yes, describe:
+3.3 Connection Method
+
+ Will you connect using:
+ Standard PostgreSQL port (5432)
+ Custom port (specify): __________
+ Do you need access from developer machines (direct connections via tools like psql/pgAdmin)? (Yes/No)
+If Yes, list IP ranges or VPN details:
+4. Capacity & Sizing
+4.1 Data Volume
+
+ Estimated initial database size (GB):
+ Estimated data growth per month (GB):
+ Expected data retention period (e.g., 6 months, 1 year, 3 years):
+4.2 Workload Characteristics
+
+ Approximate number of concurrent application users:
+ Approximate number of concurrent DB connections required:
+ Workload type (choose main type):
+ OLTP / Transactional (many small reads/writes)
+ Reporting / Analytics (fewer but heavier queries)
+ Mixed
+4.3 Performance Expectations
+
+ Do you have any specific latency requirements? (e.g., “most queries < 200 ms”):
+ Peak hours / time windows of highest load:
+5. High Availability & Disaster Recovery
+5.1 Availability Requirements
+
+ Target availability (select one):
+ Standard (some downtime acceptable during office hours)
+ High (short downtime acceptable, mostly outside office hours)
+ Very high (requires high-availability setup, e.g., automatic failover)
+5.2 Backup & Recovery
+
+ Required backup frequency:
+ Daily
+ More frequent (specify): _____________________
+ Required backup retention period (how long backups should be kept):
+ Recovery Point Objective (RPO – acceptable data loss, e.g., 15 min, 1 hour):
+ Recovery Time Objective (RTO – acceptable downtime, e.g., 1 hour, 4 hours):
+5.3 Disaster Recovery (DR)
+
+ Is a DR setup in another data center/region required? (Yes/No)
+If Yes, specify region/data center and any special requirements:
+6. Database Structure & Usage
+6.1 Schemas & Databases
+
+ Do you need:
+ A dedicated PostgreSQL database for this application?
+ Multiple databases? (If Yes, how many and names if known):
+ Do you require multiple schemas within the database? (Yes/No)
+If Yes, list expected schema names if known:
+6.2 Workload Details
+
+ Main operations (check all that apply):
+ Simple CRUD (Create/Read/Update/Delete)
+ Complex joins (multiple tables)
+ Heavy reporting queries
+ Batch imports/exports
+ Full-text search
+ Expected largest single table size (rows and/or GB):
+6.3 Special Features
+Do you plan to use any of the following PostgreSQL features?
+
+ JSON / JSONB columns
+ Partitioned tables
+ Stored procedures / functions
+ Triggers
+ Extensions (e.g., postgis, pg_trgm, uuid-ossp)
+If Yes, list required extensions:
+7. Users, Roles & Access Control
+7.1 Application Accounts
+
+ Do you need a dedicated DB user for the application? (Yes/No)
+If Yes, preferred username (if any):
+ Required permissions for the application user:
+ Read and write on application tables
+ Read-only
+ Schema changes (DDL) needed by app (Yes/No)
+7.2 Human Access
+
+ Who needs direct access to the database (developers, DBAs, analysts)? Please list role and count:
+Developers: ____ (read/write or read-only?)
+Analysts: ____ (read-only?)
+Others: _____________________
+7.3 Authentication Method
+
+ Authentication requirements:
+ Username/password
+ Single Sign-On / IAM (if supported in your environment)
+ Other (specify): _____________________
+8. Non-Functional Requirements
+8.1 Maintenance Windows
+
+ Preferred maintenance window (day/time, timezone):
+ Are there any periods when changes/downtime are strictly not allowed? (Yes/No)
+If Yes, specify:
+8.2 Monitoring & Alerts
+
+ Do you need application-specific monitoring (e.g., certain queries, certain tables)? (Yes/No)
+If Yes, describe:
+ Who should receive database-related alerts (email/Slack group, etc.)?
+8.3 Logging Requirements
+
+ Required log level (if known):
+ Default
+ Include slow query logs (threshold, e.g., > 1 second):
+ Audit logging (log all connections / changes)
+9. Integration, Migrations & Dependencies
+9.1 Existing Data Migration
+
+ Is there existing data to be migrated into this new PostgreSQL instance? (Yes/No)
+If Yes, from where (e.g., Oracle, MySQL, CSV files, another PostgreSQL instance):
+Approximate data size to migrate (GB):
+Expected migration window (date/time constraints):
+9.2 Other System Dependencies
+
+ Does this DB need to integrate with other systems (message queues, other DBs, APIs)? (Yes/No)
+If Yes, briefly describe:
+10. Version, Platform & Deployment Preferences
+10.1 PostgreSQL Version
+
+ Do you have a required minimum PostgreSQL version? (e.g., 14, 15)
+If Yes, specify:
+If No, can we use the current standard version used by the organization? (Yes/No)
+10.2 Hosting Preference
+
+ Where should this instance be hosted?
+ On-premise
+ Cloud-managed PostgreSQL (e.g., RDS, Cloud SQL, Azure Database for PostgreSQL)
+ No preference
+10.3 Time Zone & Locale
+
+ Preferred database time zone (if different from default/UTC):
+ Any specific locale or collation requirements? (Yes/No)
+If Yes, specify:
