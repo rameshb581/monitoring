@@ -1,0 +1,226 @@
+1. Opening / Setting Context
+You (DB Architect):
+“Thanks for joining. I’d like to align on database monitoring requirements for our MySQL, SQL Server, and Oracle environments.
+
+Our goal is to define:
+
+Which metrics we need for each platform
+How they’ll be collected and visualized in your observability stack
+And what alerts we should configure so DB, SRE, and app teams get the right signals.
+I’ll share an Excel sheet after this meeting listing all required metrics, with descriptions and suggested thresholds, so you can map them to tools and data sources.”
+
+2. Expected Question: “Why do you need these additional metrics? Don’t we already monitor CPU/RAM?”
+Observability:
+“We already monitor host CPU, memory, and disk at the VM/server level. Why do we need all these extra DB‑specific metrics?”
+
+Your Answer:
+“Host-level metrics are necessary but not sufficient for databases.
+
+A database can be unhealthy while the host looks fine – for example:
+Replication is broken
+Tablespace is 99% full
+There are many blocked sessions
+We need database‑level visibility to:
+Detect slow queries, lock contention and wait events
+Track connection usage so we don’t hit max connections
+Monitor backup status and replication lag for RPO/RTO compliance
+So, the DB metrics complement host metrics. The idea is not to flood you with data, but to have a standard, minimal critical set for each engine (MySQL, SQL Server, Oracle).”
+
+3. Expected Question: “Which tools or exporters do you expect us to use?”
+Observability:
+“What are you expecting in terms of tooling? Prometheus exporters? Native integrations? We need to understand what’s realistic.”
+
+Your Answer:
+“We’re flexible on exact tooling as long as we can get the metrics listed in the Excel. Typically, this looks like:
+
+MySQL
+A standard MySQL exporter (e.g., Prometheus MySQL exporter, or your APM/monitoring agent’s MySQL integration)
+SQL Server
+Metrics from DMVs and/or built‑in integrations (e.g., performance counters, query against system views via your agent)
+Oracle
+Metrics via a DB monitoring agent or queries against v$ views (like v$system_event, v$sysstat, dba_tablespaces, etc.)
+From my side, I’ll:
+
+Provide the list of metrics with names and descriptions
+Help validate sample queries if needed
+From your side, I’d appreciate:
+
+Recommending the standard pattern you use for DB monitoring in your stack
+Telling us which metrics are easy vs. hard to collect with your existing tooling”
+4. Expected Question: “Can you prioritize? We can’t implement 100 metrics on day one.”
+Observability:
+“The list looks long. We can’t build everything at once. Which are the must‑have metrics vs nice‑to‑have?”
+
+Your Answer:
+“Agreed, we don’t need everything on day one. I propose three levels:
+
+Phase 1 – Critical health & capacity (must‑have)
+Is the DB up?
+Connection usage vs max
+CPU & memory usage at DB level (where possible)
+Tablespace/disk usage
+Replication/HA status & lag
+Basic error counts and failed logins
+Backup age & last backup status
+Phase 2 – Performance diagnosis
+Slow query counts
+Key wait events (SQL Server waits, Oracle top waits, MySQL InnoDB waits)
+Buffer cache hit ratios, key performance counters
+Phase 3 – Optimization & fine‑tuning
+More detailed breakdowns (per DB / per schema / per top query)
+Advanced metrics like parse rates, tempdb / temp tablespace deep‑dive
+In the Excel, I’ll mark each metric with a priority (P1/P2/P3) so you can roll them out in phases.”
+
+5. Expected Question: “How often do you need these metrics? What’s the collection frequency?”
+Observability:
+“What collection intervals are you expecting? Some metrics can be expensive to collect often.”
+
+Your Answer:
+“We can tune frequency based on cost and your standards. Rough guidelines:
+
+Fast‑changing / critical (e.g., availability, connections, CPU, replication lag):
+Every 30–60 seconds
+Performance counters / waits:
+Every 1–5 minutes, depending on overhead
+Capacity / storage / backup status:
+Every 5–15 minutes is fine
+Expensive queries (detailed top queries, deep diagnostics):
+Either on demand, or less frequently like every 15–30 minutes if you expose them as metrics
+In the Excel sheet I’ll propose default intervals, but we can adjust them to fit your performance and cost constraints.”
+
+6. Expected Question: “What kind of alerts do you want? Who gets them?”
+Observability:
+“Once we have metrics, what alerts do you actually want? And who should be paged vs just informed?”
+
+Your Answer:
+“We want a small, meaningful set of alerts with clear ownership:
+
+Critical alerts (page DBA / on‑call immediately)
+Examples:
+Database unreachable
+Replication / HA in a bad state (lag above critical threshold, failed replica)
+Tablespace or disk usage > 95%
+Backup age beyond RPO (e.g., no successful backup in > 24h where daily backup is required)
+Warning alerts (email / ticket, not necessarily page)
+Connections > 80–90% of max
+Tablespace/disk usage > 85%
+Moderate replication lag (e.g., > 60s but below critical threshold)
+Increasing trend in slow queries
+Informational / dashboards only
+Detailed per‑query metrics
+Most wait event breakdowns
+Some performance counters
+Alert routing:
+
+DBA/DB team: critical DB health and capacity issues
+SRE/platform: infra‑level issues and HA platform issues
+Application team: app‑driven issues (e.g., spikes in slow queries attributable to recent releases)
+I’ll mark ‘Alert Type’ and ‘Target Team’ in the Excel, but I’d like your input to align with your existing alert policies.”
+
+7. Expected Question: “How many instances and environments are we talking about?”
+Observability:
+“How big is the scope? How many MySQL / SQL Server / Oracle instances, and across which environments?”
+
+Your Answer:
+“We’d like a standardized setup across all environments, but rollout can be staged.
+
+Environments:
+Prod is the priority
+Then pre‑prod/UAT
+Optionally some metrics in non‑prod for capacity and performance testing
+Scope (example – adapt to your reality):
+~X MySQL instances
+~Y SQL Server instances
+~Z Oracle instances
+We don’t need deep metrics for every dev/test sandbox. But for production and key pre‑prod/UAT systems, we want full coverage of the Phase 1 metrics and at least partial coverage of Phase 2.”
+
+8. Expected Question: “How will credentials and security be handled?”
+Observability:
+“These metrics usually require DB access. How do we handle credentials and permissions securely?”
+
+Your Answer:
+“Security is critical; we’ll follow your standards:
+
+We will:
+Create dedicated, least‑privilege monitoring accounts per DB engine.
+Grant only the minimum permissions needed to read system views and DMVs.
+Rotate passwords according to our security policy.
+We’d like you to:
+Store credentials in your standard secret management solution (e.g., Vault, AWS Secrets Manager, Key Vault, whatever you use)
+Ensure agents/exporters don’t log credentials and use encrypted channels.
+We can also review the exact permissions with you and our security team to ensure compliance.”
+
+9. Expected Question: “Can we reuse our existing dashboards, or do you want custom ones?”
+Observability:
+“We already have some generic DB dashboards. Do you want us to build everything from scratch or reuse?”
+
+Your Answer:
+“If you already have standard DB dashboards, that’s ideal. I’d like to:
+
+Review what you currently have for MySQL, SQL Server, and Oracle
+Map my required metrics in the Excel to those existing panels
+Identify gaps where we need new panels or slight tweaks
+Our main requirements:
+
+A high‑level health dashboard per DB engine (Prod focus)
+Instance‑level views with:
+Availability
+Connections
+Key performance metrics
+Capacity (tablespace/disk usage, log usage, etc.)
+Replication/HA status
+We don’t need highly customized visualizations initially; we just want:
+
+A consistent, standard layout
+Quick answers to: “Is the database healthy? Where is it hurting?””
+10. Expected Question: “How will you validate that the metrics and alerts are working?”
+Observability:
+“Once we implement this, how do we test and confirm the setup is useful?”
+
+Your Answer:
+“I propose a simple validation approach:
+
+Pilot on 1–2 instances per DB type (e.g., one MySQL, one SQL Server, one Oracle)
+For each:
+Confirm metrics are visible on dashboards
+Trigger controlled scenarios, like:
+Artificially increased load (non‑prod)
+Simulated replication lag (where feasible)
+Fill a non‑critical tablespace near threshold (non‑prod)
+Verify:
+Metrics move as expected
+Alerts fire to the right channels
+The graphs and alerts are understandable by DB and SRE teams
+Gather feedback from:
+DBAs
+SRE/on‑call
+App teams (if they’ll use the dashboards)
+After that, we adjust thresholds, reduce noise, and then roll out to more instances.”
+
+11. Expected Question: “What’s the timeline and who owns what?”
+Observability:
+“What’s your expected timeline, and how do you see the division of responsibilities?”
+
+Your Answer:
+“Roughly:
+
+This week / next week:
+I’ll send you the Excel with metrics, priorities, and suggested thresholds.
+You’ll review and tell us what is already available, what’s easy/hard, and any constraints.
+Next 2–4 weeks:
+Implement Phase 1 metrics & alerts for 1–2 instances per engine.
+Build or adapt standard dashboards.
+After pilot:
+Tune thresholds based on alert noise.
+Roll out to all production instances.
+Plan rollout to key non‑prod/UAT instances.
+Ownership:
+
+DB team (us):
+Define metrics, explain them, and validate correctness.
+Provide sample queries if needed.
+Help interpret metrics during incidents.
+Observability team (you):
+Implement metric collection in your tools.
+Configure dashboards and alerting rules.
+Maintain the monitoring platform itself.”
