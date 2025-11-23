@@ -1,0 +1,88 @@
+Meeting: Database Monitoring & Observability Strategy
+Attendees:
+
+Alex – Database Solution Architect (DB Architect)
+Jordan – Observability Engineer (Obs Engineer)
+
+Alex (DB Architect) – starts the meeting
+Hey Jordan, thanks for jumping on. Let’s get straight to it.
+We need to enable proper monitoring and observability for all our major RDBMS platforms: MySQL, Oracle, SQL Server, and PostgreSQL.
+Our current plan is to standardize on the “vanilla” community exporters via Alloy (the new unified OpenTelemetry collector distribution from Grafana):
+
+mysqld_exporter
+oracle-db_exporter (oracledb_exporter)
+sqlserver_exporter
+postgres_exporter
+
+These will all be managed and deployed through Grafana Alloy.
+My first question to you: with these vanilla exporters, are we actually able to collect the required core metrics that the DB team and app teams have defined as mandatory? I’m talking about things like:
+
+Global status metrics (connections, queries/sec, slow queries, InnoDB buffer pool, etc.)
+Per-database/table-level granularity where needed
+Lock waits, deadlocks, replication lag (for MySQL/PostgreSQL)
+Oracle: wait events, PGA/UGA memory, AWR-style top waits (I know vanilla exporter is limited here)
+SQL Server: wait stats, buffer cache hit ratio, page life expectancy, etc.
+
+Do these vanilla exporters cover 80–90 % of what we need out of the box, or are we going to hit big gaps immediately?
+Jordan (Obs Engineer)
+Good question. Let me break it down per database:
+
+MySQL → mysqld_exporter is very mature. With PERFORMANCE_SCHEMA and INFORMATION_SCHEMA enabled, you get almost everything the DBAs care about: QPS, slow queries, InnoDB row ops, buffer pool efficiency, replication lag, temporary objects, handler stats, etc. We’re easily at 95 %+ coverage.
+PostgreSQL → postgres_exporter is also excellent. With pg_stat_statements and the usual views, we get queries/sec, temp files, checkpoints, replication slot lag, WAL stats, locks, etc. Again, 90–95 % coverage for standard needs.
+SQL Server → sqlserver_exporter is decent but lighter. You get the main performance counters (Batch Requests/sec, Page Life Expectancy, Buffer cache hit ratio, Lazy writes/sec, Lock waits, SQL compilations/recompilations). It does NOT give you per-query or wait-stats breakdown like DMVs (sys.dm_os_wait_stats). So we’ll miss deeper troubleshooting capability there.
+Oracle → This is the weakest link. The community oracledb_exporter is very basic. It scrapes a handful of v$sysstat and v$session metrics, but you don’t get:
+Detailed wait event breakdown
+Top SQL by elapsed time / CPU / IO
+ASH/AWR-equivalent data
+Tablespace usage at a useful granularity
+Basically, it’s “is the instance up and have some high-level counters,” not “why is this query slow today?”
+
+
+So summary: MySQL and PostgreSQL → yes, vanilla exporters are totally sufficient for day-to-day and alerting.
+SQL Server → acceptable for tier-1 alerting, but we’ll be blind on deep performance investigations.
+Oracle → big gap. Vanilla exporter will only give us heartbeat-level monitoring.
+Alex (DB Architect)
+Exactly what I suspected. That matches the gap analysis the team did last week.
+That’s why, in addition to the Alloy + vanilla exporter baseline, we want to onboard a proper Database Performance Analyzer tool that can give us the deeper insights — basically something in the SolarWinds DPA, Oracle Enterprise Manager Cloud Control, or Foglight/Datadog DBA vision category.
+The use cases we can’t live without are:
+
+Historical top SQL with full execution plans and wait breakdown
+Anomaly detection on query performance (baseline drift)
+Blocking/latching/contention visualization
+Accurate database and table growth forecasting
+Ability to correlate DB load with OS and application metrics in the same pane
+
+SolarWinds DPA is currently the front-runner because we already have licensing for other SolarWinds products and the team knows the UI.
+Jordan (Obs Engineer)
+I have no objection architecturally. A couple of points from the observability side:
+
+DPA itself can push its own metrics into Prometheus via the SolarWinds Snap Agent or the Orion Prometheus exporter, so we can still bring key DPA metrics (like “Query Response Time Index,” “Wait Time,” etc.) into Grafana alongside the vanilla exporter metrics.
+We should treat DPA (or whichever tool) as the source of truth for deep-dive analysis and keep the Alloy/vanilla exporters as the lightweight, always-on, high-cardinality-avoiding layer for alerting and dashboards.
+If we ever move away from SolarWinds, Datadog Database Monitoring or New Relic also give very similar capabilities and integrate even more natively with traces.
+
+Alex (DB Architect)
+Agreed. So proposed motion:
+Phase 1 (next 4–6 weeks):
+
+Roll out Grafana Alloy with vanilla exporters for all four RDBMS types in non-prod, then prod
+Build unified Grafana dashboards + standard alerts (connection spikes, slow query surge, replication lag > 30 s, PLE drop, etc.)
+
+Phase 2 (parallel, starting now):
+
+Procure/extend SolarWinds DPA licenses and onboard all critical instances
+Integrate DPA metrics into our Prometheus/Grafana stack
+Define which team owns which dashboard (lightweight day-to-day = Platform/Observability, deep-dive forensics = DBA team)
+
+Jordan (Obs Engineer)
+Works for me. One ask: can the DBA team document the exact list of “must-have” metrics per platform so we can validate 100 % coverage before we declare Phase 1 done?
+Alex (DB Architect)
+Absolutely. I’ll send the finalized metric catalog by end of day tomorrow — it’s already 90 % done.
+Anything else from your side?
+Jordan (Obs Engineer)
+Just one heads-up: for Oracle, until DPA is fully onboarded, we might want to run the grafana/oracle-db-connected-exporter (the newer one that uses native connection instead of scraping) — it gives significantly more metrics than the old oracledb_exporter. Low effort, big win.
+Alex (DB Architect)
+Let’s do it. Add that to Phase 1 scope.
+Cool. I think we’re aligned. I’ll send out meeting notes and the metric catalog tomorrow.
+Thanks Jordan!
+Jordan (Obs Engineer)
+You got it. Talk soon.
