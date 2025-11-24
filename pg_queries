@@ -1,0 +1,99 @@
+PostgreSQL New Instance Request – Application Team Checklist (Tabular Format)
+You can paste this directly into Confluence and convert it to tables, or copy each section as a separate table.
+
+1. General Information
+Field / Question	Example / Instructions
+Application Name	Enter the official application name.
+Short Description of Application	1–2 sentences describing what the application does.
+Business Owner (Name)	Person accountable for the application.
+Business Owner Email	Email address.
+Technical Owner / Primary Contact (Name)	Main technical contact for this application.
+Technical Owner Email	Email address.
+On-call Contact / Distribution List (if any)	Pager/On-call email list or group.
+Environment(s) Required (Dev/Test/UAT/Prod/Other)	Check/select all that apply.
+Purpose of Database Instance (transactional, reporting, analytics, etc.)	Brief description of how the DB will be used.
+2. Data Classification & Security
+Field / Question	Options / Instructions
+Data Sensitivity Level	Public / Internal / Confidential / PII / Financial / Health / Other (specify).
+Will the database store PII?	Yes / No – if Yes, describe type of PII.
+Compliance Requirements	None / GDPR / PCI-DSS / HIPAA / SOX / Other (specify).
+Is Encryption at Rest Required?	Yes / No – specify any standard (e.g., AES-256).
+Is Encryption in Transit (SSL/TLS) Required?	Yes / No.
+Will External Users (outside company network) Access the DB?	Yes / No – if Yes, specify how (VPN, private link, etc.).
+Any Specific IP/Network Restrictions for Access?	List allowed IP ranges/subnets or security groups.
+3. Connectivity & Network
+Field / Question	Example / Instructions
+Application Name(s) Connecting to this DB	If multiple components connect, list them.
+Type of Application	Backend service / Web app / Batch job / BI tool / Other (specify).
+Source Networks/Subnets	List network segments (CIDR, VLAN, or subnet names).
+Required Firewall Rules	Describe any special rules, if known.
+DB Port	Standard (5432) or Custom (specify port).
+Do Developers Need Direct DB Access (psql/pgAdmin)?	Yes / No – if Yes, list IP ranges or VPN info.
+4. Capacity & Sizing
+Field / Question	Example / Instructions
+Estimated Initial Database Size (GB)	e.g., 10 GB.
+Estimated Monthly Data Growth (GB)	e.g., 2 GB/month.
+Expected Data Retention Period	e.g., 6 months, 1 year, 3 years.
+Approximate Number of Concurrent Application Users	Estimate or range.
+Approximate Number of Concurrent DB Connections Required	Estimate or range.
+Workload Type	OLTP / Reporting / Mixed – choose main one.
+Specific Latency Requirements (if any)	e.g., “Most queries should complete < 200 ms.”
+Peak Load Periods	e.g., “Weekdays 9:00–18:00 CET.”
+5. High Availability & Disaster Recovery
+Field / Question	Example / Instructions
+Target Availability Level	Standard / High / Very High (requires HA).
+Is a High-Availability Setup Required?	Yes / No – describe expectations (automatic failover, read replicas, etc.).
+Required Backup Frequency	Daily / Multiple times per day / Other (specify).
+Backup Retention Period	How long backups must be kept (e.g., 30 days, 90 days).
+Recovery Point Objective (RPO) – Acceptable Data Loss	e.g., 15 min, 1 hour.
+Recovery Time Objective (RTO) – Acceptable Downtime	e.g., 1 hour, 4 hours.
+Is a DR Setup in Another Region/Data Center Required?	Yes / No – if Yes, specify target region/DC and requirements.
+6. Database Structure & Usage
+Field / Question	Example / Instructions
+Do You Need a Dedicated Database for This Application?	Yes / No.
+Do You Need Multiple Databases?	Yes / No – if Yes, how many and names (if known).
+Do You Require Multiple Schemas?	Yes / No – list schema names if known.
+Main Operations	CRUD / Complex joins / Heavy reporting / Batch imports/exports / Full-text search (check all).
+Expected Largest Table Size (Rows/GB)	Rough estimate if known.
+Planned Use of JSON/JSONB Columns?	Yes / No.
+Planned Use of Table Partitioning?	Yes / No.
+Planned Use of Stored Procedures/Functions or Triggers?	Yes / No – briefly describe.
+Required PostgreSQL Extensions	e.g., uuid-ossp, pg_trgm, postgis – list if known.
+7. Users, Roles & Access Control
+Field / Question	Example / Instructions
+Do You Need a Dedicated DB User for the Application?	Yes / No – specify preferred username if any.
+Required Permissions for Application User	Read/write / Read-only / Needs to create or alter tables?
+Who Needs Direct Human Access (Developers, Analysts, etc.)	List roles and approximate count (e.g., 5 developers, 2 analysts).
+Access Level for Developers	Read-only / Read-write / No direct access.
+Access Level for Analysts	Read-only / Limited to reporting schema, etc.
+Authentication Method Required	Username/password / SSO/IAM (if available) / Other (specify).
+8. Non-Functional Requirements
+Field / Question	Example / Instructions
+Preferred Maintenance Window (Day/Time, Timezone)	e.g., Sunday 01:00–03:00 CET.
+Times When Changes/Downtime Are Not Allowed	e.g., Month-end closing, Black Friday, etc.
+Application-Specific Monitoring Needs	Any special metrics or checks you expect.
+Who Should Receive Database Alerts (Email/Chat Group)	List mailing lists or chat channels.
+Required Logging Level	Default / Include slow query logs / Detailed audit logging.
+Slow Query Threshold (if logging required)	e.g., log queries slower than 1 second.
+9. Integration, Migrations & Dependencies
+Field / Question	Example / Instructions
+Is There Existing Data to Migrate into This DB?	Yes / No.
+Source of Existing Data	e.g., Oracle, MySQL, CSV files, older PostgreSQL instance.
+Approximate Data Volume to Migrate (GB)	Estimate.
+Migration Window / Time Constraints	e.g., must be completed over a weekend, specific dates.
+Other System Integrations	Message queues, other databases, external APIs – brief description.
+10. Version, Platform & Deployment Preferences
+Field / Question	Example / Instructions
+Required Minimum PostgreSQL Version	e.g., 14 / 15, or “No preference, use standard.”
+Hosting Preference	On-prem / Cloud-managed (RDS, Cloud SQL, Azure) / No preference.
+Preferred Database Time Zone	e.g., UTC (recommended) or specific timezone if needed.
+Specific Locale or Collation Requirements	Yes / No – if Yes, specify (e.g., en_US.UTF-8).
+11. Timeline & Approvals
+Field / Question	Example / Instructions
+Target Date When Database Should Be Ready	Date.
+Planned Go-live Date of the Application	Date, if different.
+Approved by Business Owner	Yes / No – name and date of approval.
+Approved by Architecture/Review Board (if applicable)	Yes / No – name and date of approval.
+12. Additional Notes
+Field / Question	Example / Instructions
+Additional Comments / Special Requirements	Any information not covered above (special SLAs, licensing, tooling, etc.).
