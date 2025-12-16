@@ -1,0 +1,85 @@
+#!/bin/bash
+LOG_FILE="/path/to/mysql-slow.log"
+START_TIME=$(date -d "2025-12-16 14:25:00" +%s) # Convert start to epoch
+END_TIME=$(date -d "2025-12-16 14:35:00" +%s) # Convert end to epoch
+
+awk -v start="$START_TIME" -v end="$END_TIME" '
+/# Time:/ {
+split($3, dt, "T");
+date_str = dt[1] " " substr(dt[2], 1, 8); # YYYY-MM-DD HH:MM:SS
+ts = mktime(gensub(/-|:|\//, " ", "g", date_str));
+if (ts >= start && ts <= end) { print; in_block=1 } else { in_block=0 }
+}
+in_block { print }
+' "$LOG_FILE" > filtered.log
+
+
+
+awk '/# Time: 2025-12-16T14:2[5-9]/ || /# Time: 2025-12-16T14:3[0-5]/ {print; getline; print; getline; print;}' /path/to/mysql-slow.log > filtered.log
+
+pt-query-digest --limit=10 filtered.log > digest_report.txt
+
+• Key metrics to check:
+• Query_time: Total/avg time spent.
+• Lock_time: If high, indicates contention (common in InnoDB).
+• Rows_examined vs. Rows_sent: High ratio suggests missing indexes or full table scans.
+• Users/Hosts: See if tied to your PHP app.
+• Manual spot-check: In the filtered log, look for queries with high Query_time (> your timeout threshold, e.g., 30s) or frequent appearances around error times.
+
+
+pt-query-digest slow.log --filter '$event->{db} eq "mydatabase"'
+
+pt-query-digest slow.log \
+--filter '$event->{db} eq "mydatabase"' \
+--group-by fingerprint \
+--order-by Query_time:sum \
+--limit 5
+
+
+pt-query-digest slow.log --filter '$event->{arg} =~ m/^select/i'
+
+
+pt-query-digest slow.log --filter '$event->{arg} =~ m/WHERE user_id =.*ORDER BY created_at/i'
+
+pt-query-digest slow.log --filter '$event->{arg} =~ m/WHERE user_id =.*ORDER BY created_at/i'
+
+
+pt-query-digest slow.log --filter '$event->{arg} eq "SELECT * FROM users WHERE id = 123"'
+
+
+pt-query-digest slow.log \
+--filter '$event->{arg} =~ m/^update/i && $event->{Rows_examined} > 10000' \
+--group-by fingerprint \
+--limit 10
+
+
+pt-query-digest slow.log --since 24h
+
+
+pt-query-digest slow.log \
+--since '2025-12-01 00:00:00' \
+--until '2025-12-16 23:59:59'
+
+
+pt-query-digest slow.log --since 1h --until now
+
+
+pt-query-digest slow.log \
+--since '2025-12-10 00:00:00' \
+--until '2025-12-16 23:59:59' \
+--filter '$event->{db} eq "mydatabase" && $event->{arg} =~ m/^select/i'
+
+
+pt-query-digest slow.log \
+--since 7d \
+--filter '$event->{db} eq "mydatabase" && $event->{arg} =~ m/update.*user_id/i' \
+--group-by fingerprint \
+--order-by Query_time:sum \
+--limit 10
+
+
+Tips for Effective Use
+• Complex filters: If Perl syntax gets messy, save it to a file (e.g., filter.pl) and use --filter 'do "filter.pl"'.
+• Performance: For huge logs, time filters (--since/--until) reduce processing time before applying --filter.
+• Output details: The report includes query time, lock time, rows examined, etc. Use --explain with a DSN for EXPLAIN plans.
+• Edge cases: If timestamps are inconsistent, sort the log first (e.g., with sort). Test filters on a small log subset.
