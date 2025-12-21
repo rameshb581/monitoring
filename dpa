@@ -185,3 +185,9 @@ This document outlines:
 - Sample DPA dashboard (MSSQL & MySQL)  
 
 
+
+
+
+
+
+We selected SolarWinds Database Performance Analyzer (DPA) as our preferred monitoring solution because it provides comprehensive support for a heterogeneous database environment, accommodating multiple platforms such as Microsoft SQL Server, Oracle, MySQL, and PostgreSQL. Its ability to monitor both on-premises and cloud-based database instances ensures seamless coverage across our hybrid infrastructure. By consolidating performance monitoring into a single, unified tool, we significantly simplify manageability, reduce operational complexity, and enhance visibility across all critical systems. This approach not only streamlines administration but also enables proactive performance optimisation, ensuring consistent service levels for our most business-critical applications.
