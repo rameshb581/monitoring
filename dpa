@@ -16,3 +16,27 @@ Agentless monitoring reduces overhead on production systems compared to agent-ba
 
 Integration & Reporting
 Built-in integration with SolarWinds Orion platform and detailed historical trend analysis for capacity planning.
+
+
+Why Choose SolarWinds DPA for Database Performance Monitoring?
+SolarWinds Database Performance Analyzer (DPA) is selected because:
+
+
+Deep Query-Level Analysis
+Unlike tools that focus only on server metrics, DPA provides granular visibility into SQL query execution and wait events, enabling root-cause analysis.
+
+
+Agentless Architecture
+Reduces overhead on production systems compared to agent-based tools, making it lightweight and easier to maintain.
+
+
+Multi-Platform Support
+Supports heterogeneous environments (SQL Server, Oracle, MySQL, PostgreSQL) under a single dashboard, which is critical for enterprises running multiple database technologies.
+
+
+Historical Trend Analysis
+Enables capacity planning and proactive optimisation by analysing long-term performance trends.
+
+
+Integration & Reporting
+Seamless integration with SolarWinds Orion for unified monitoring and robust reporting capabilities.
