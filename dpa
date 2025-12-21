@@ -1,0 +1,18 @@
+Query-Level Performance Analysis
+Unlike many tools that focus only on server metrics, DPA provides deep visibility into SQL query execution, waits, and bottlenecks.
+
+
+Wait-Time Analysis
+It uses a unique wait-time methodology to pinpoint the root cause of performance issues, which is more actionable than CPU/memory metrics alone.
+
+
+Cross-Platform Support
+Supports multiple relational database engines in a single pane of glass, ideal for heterogeneous environments.
+
+
+Lightweight Architecture
+Agentless monitoring reduces overhead on production systems compared to agent-based tools.
+
+
+Integration & Reporting
+Built-in integration with SolarWinds Orion platform and detailed historical trend analysis for capacity planning.
