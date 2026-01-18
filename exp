@@ -1,0 +1,54 @@
+
+1. Brief introduction & overall direction
+“I’ve been working as a database administrator for over 12 years, mainly around Oracle, and over time I’ve moved from pure technical operations into more solution‑driven and architecture‑oriented roles.”
+
+“Across my career, the common theme has been building stable, secure, and cost‑efficient database platforms that support business growth, and that is exactly what attracts me to a company like ROSSMANN.”
+
+2. Early career – how you started
+“I started my career as a junior Oracle DBA in a large telecom environment. At that stage, my focus was on learning the fundamentals: backups, monitoring, user management, and understanding how a mission‑critical database behaves in production.”
+
+“I quickly got involved in scripting and automation. I wrote shell scripts for RMAN backups, statistics gathering, and index maintenance, and I developed a health‑check script that collected key metrics and logs and presented them in a clear tabular format. That experience taught me the value of automation and standardization very early.”
+
+“Because of this proactive work, I was promoted and trusted with more responsibility, including handling incidents independently and supporting other teams.”
+
+3. Growing into complex projects & leadership
+“As I gained experience, I moved from single‑instance administration into more complex environments – RAC, Data Guard, ASM, RMAN, and performance tuning. I became comfortable managing high‑availability setups and dealing with patching and upgrades with minimal downtime.”
+
+“In parallel, I was also exposed to other technologies – MySQL with InnoDB Cluster and Group Replication, some MSSQL and PostgreSQL for basic administration, patching, and user management. This multi‑technology exposure helped me think more like a platform engineer rather than just a single‑product DBA.”
+
+“One important step in my journey was leading a database consolidation project for a US retail client (Sysco Foods). We upgraded from 11gR2 to 12cR2, moved to multitenant architecture, and consolidated around 50 individual databases into two CDBs. This reduced licensing and infrastructure cost and simplified administration. That project made me realize how much impact a well‑designed database strategy can have on cost and operations.”
+
+4. Recent roles – end‑to‑end ownership and cloud
+Current organization: end‑to‑end ownership
+“In my current role as Senior Database Administrator, I’m responsible for the full lifecycle of Oracle environments – from design and high availability to patching, backups, security, and performance.”
+
+“A few key initiatives I led:
+
+Datacenter migration: I migrated critical Oracle RAC databases from one datacenter to another, and migrated MariaDB workloads to MySQL InnoDB Cluster. This required detailed planning, coordination with many teams, and careful cutover to minimize downtime.
+
+Bare‑metal to virtualization: I moved Oracle databases from physical servers to VMware. I worked with Oracle Support to get approval for VLAN isolation, created a blueprint architecture together with the VMware team, and demonstrated that our design met Oracle’s licensing and support requirements. After that, we successfully completed the migration.
+
+Backup modernization: I redesigned backups by integrating RMAN with Veeam using application‑aware backups. This gave us faster recovery options and better visibility for the backup team.”
+
+“Beyond pure database work, I also contributed to VMware cluster setup, backup design, and Pure Storage integration. This broadened my view from ‘just the database’ to the full infrastructure stack.”
+
+HWS Gruppe / Adidas: cloud & automation
+“At HWS Gruppe, working for the Adidas account, I focused heavily on cloud migration and automation.
+
+I led a migration of a critical Oracle database from on‑premises to AWS RDS. I coordinated with multiple application teams, ran a proof‑of‑concept with minimal downtime, used SCT and DMS with CDC for continuous replication, and managed the final cutover and post‑migration performance tuning.
+
+I also designed and implemented an automated Oracle PDB provisioning solution. Using VMware vRealize as a frontend and SQL/T‑SQL logic on MSSQL as a backend, we built a system that checked CMDB for server resources, calculated capacity, and deployed new PDBs on the most suitable host. This reduced manual work and gave application teams a faster, standardized way to get databases.”
+
+“In that role, I also mentored an L1 database team, participated in capacity planning, prepared growth reports for budgeting, and supported patching and upgrades. This strengthened my communication skills and my ability to translate technical details into business impact.”
+
+5. Why ROSSMANN & what motivates you
+You can tailor this part to ROSSMANN’s context as a large retail organization:
+
+“What motivates me now is working in an environment where databases are truly business‑critical and where stability, security, and efficiency directly affect customers and stores – and that’s why ROSSMANN interests me.”
+
+“Retail needs highly available systems, predictable performance, and secure handling of sensitive data. With my background in RAC, Data Guard, multitenant consolidation, and security features like TDE and Data Redaction, I can help build and maintain such platforms.”
+
+“I also enjoy working across technologies – Oracle as the core, but also MySQL, MSSQL, and PostgreSQL where needed – and collaborating with infrastructure, virtualization, and backup teams. ROSSMANN’s size and complexity offer exactly this kind of cross‑team collaboration.”
+
+“Finally, I am looking for a place where I can both contribute my experience and continue to grow: for example, further optimizing multitenant environments, refining HA concepts, or supporting future cloud or hybrid initiatives. I see ROSSMANN as a long‑term environment where I can create stable solutions, mentor others, and continuously improve the database landscape.”
+
