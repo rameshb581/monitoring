@@ -1,0 +1,482 @@
+1. High‑level architecture
+First define the moving parts; this will guide your Ansible role layout.
+
+One Docker container runs PostgreSQL and pgBackRest, or you run pgBackRest in a separate sidecar/container that can access the same PGDATA and WALs.
+
+A pgBackRest repository (local volume, NFS, or S3‑compatible storage) is mounted into the pgBackRest container.
+
+Ansible runs from a control host and connects to the Docker host (not inside the containers) via SSH.
+
+Ansible is responsible for:
+
+Building and running the Docker containers (PostgreSQL + pgBackRest image, volumes, ports).
+
+Generating pgBackRest configuration files inside the container (stanza, repo, archive_command, restore_command).
+
+Running backup commands on a schedule (via cron/systemd timers or an external scheduler).
+
+Orchestrating restores by stopping the Postgres container, preparing data dir with pgBackRest restore, and starting it again.
+​
+
+A simple example: you have a host db01 with a postgres container and a pgbackrest volume mounted at /var/lib/pgbackrest.
+
+2. Prepare Docker images and containers
+Standardize containers so that Ansible knows exactly where PGDATA and pgBackRest live.
+
+2.1 Build an image with PostgreSQL + pgBackRest
+You can either extend the official postgres image or use a pre‑built one; extending is more flexible.
+
+Create a Dockerfile (for example Dockerfile.pg) that:
+
+Starts from an official PostgreSQL base (e.g. postgres:16).
+
+Installs pgBackRest packages (for Debian/Ubuntu: apt-get update && apt-get install -y pgbackrest).
+​
+
+Ensures directories:
+
+PGDATA: /var/lib/postgresql/data.
+
+pgBackRest config: /etc/pgbackrest.
+
+pgBackRest repo: /var/lib/pgbackrest (this will be a volume).
+
+Adds postgres user and group consistent with the base image, and sets permissions (chown -R postgres:postgres).
+
+Example tasks Ansible will later do:
+
+Build image with community.docker.docker_image using the Dockerfile path.
+
+Tag the image as myorg/postgres-pgbackrest:latest.
+
+2.2 Define containers and volumes
+Design the run‑time layout.
+
+Volumes:
+
+pgdata → mapped to /var/lib/postgresql/data in the container.
+
+pgbackrest_repo → mapped to /var/lib/pgbackrest.
+
+Optional: pgbackrest_conf → mapped to /etc/pgbackrest so configs are persisted and editable.
+
+Environment variables:
+
+POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB as usual.
+
+Ports:
+
+Map 5432 from container to host as needed.
+
+Using Ansible Docker modules, you will create a task to run the container with these volumes and env vars.
+
+3. Design the Ansible structure
+A clean project structure helps you reuse playbooks.
+​
+
+Example project layout:
+
+inventories/production/hosts.yml – defines db01, etc.
+
+roles/postgres_docker/
+
+tasks/main.yml – build image, create volumes, run container.
+
+templates/pgbackrest.conf.j2 – pgBackRest config.
+
+templates/pg_hba.conf.j2, postgresql.conf.j2 – PG configs as needed.
+
+roles/pgbackrest/
+
+tasks/main.yml – configure pgBackRest, initialize stanza.
+
+tasks/backup.yml – run backup (full/diff/incr).
+
+tasks/restore.yml – restore flow.
+
+playbooks/
+
+deploy_pg.yml – bring up a new DB + pgBackRest.
+
+backup_pg.yml – run backup tasks.
+
+restore_pg.yml – run restore tasks.
+
+Variables file (group_vars/host_vars) defines common paths, stanza name, repo type, etc.
+​
+
+Example key variables:
+
+pg_version: "16"
+
+pg_data_dir: "/var/lib/postgresql/data"
+
+pgbackrest_conf_dir: "/etc/pgbackrest"
+
+pgbackrest_repo_dir: "/var/lib/pgbackrest"
+
+pgbackrest_stanza: "main"
+
+pgbackrest_repo_type: "posix" (or "s3" etc.).
+​
+
+4. Configure PostgreSQL for pgBackRest
+You must configure PostgreSQL to use pgBackRest for WAL archiving and restore.
+
+4.1 Set postgres configuration
+In your role:
+
+Render postgresql.conf and pg_hba.conf as templates and mount them into container.
+
+Include in postgresql.conf:
+
+archive_mode = on
+
+archive_command = 'pgbackrest --stanza=main archive-push %p'
+
+wal_level = replica or higher to allow proper WAL archiving.
+​
+
+In pg_hba.conf, allow pgBackRest user to connect if you use a remote repository or sidecar container.
+
+Ansible steps:
+
+Copy templates into a host directory.
+
+Mount them as volumes into the container (e.g., host /opt/postgres/conf → container /etc/postgresql) or copy them inside the container via an Ansible docker_container command or a helper script.
+
+Restart the container so PG loads new configs.
+
+4.2 Create pgBackRest user/roles
+If you run pgBackRest from the same container, it can use the local UNIX socket and postgres OS user. If you run from outside, create a dedicated superuser like pgbackrest in PostgreSQL:
+​
+
+Ansible uses the postgresql_user module to create pgbackrest role with replication and backup permissions.
+
+Store credentials in Ansible Vault.
+
+5. Configure pgBackRest inside the container
+Now define how pgBackRest talks to PostgreSQL and where it stores backups.
+
+5.1 Generate pgbackrest.conf
+Template pgbackrest.conf.j2 with at least one stanza and repo.
+​
+
+Example content (simplified):
+
+Global:
+
+[global]
+
+repo1-path=/var/lib/pgbackrest
+
+repo1-retention-full=7
+
+log-level-console=info
+
+Stanza:
+
+[main]
+
+pg1-path=/var/lib/postgresql/data
+
+pg1-port=5432
+
+Optionally pg1-host if pgBackRest runs from another container/host.
+
+Ansible tasks:
+
+Use template: module to render pgbackrest.conf into the host directory that is volume‑mounted to /etc/pgbackrest inside the container.
+
+Ensure permissions: owner=postgres group=postgres mode=0600.
+
+If using S3 or MinIO repo, configure repo1-type=s3 and S3 credentials as documented in pgBackRest docs.
+​
+
+5.2 Initialize the stanza
+An initial stanza check/bootstrap is required.
+​
+
+Run pgbackrest --stanza=main --log-level-console=detail check inside the container.
+​
+
+If first run, this also validates the repo and PG connection.
+
+With Ansible:
+
+Use community.docker.docker_container_exec (or shell with docker exec) to run as user postgres:
+
+docker exec -u postgres postgres-pgbackrest pgbackrest --stanza=main check
+
+Register the output and fail if the command returns non‑zero.
+
+6. Automate backups with Ansible
+Now you have pgBackRest and PostgreSQL wired together; you can automate backups.
+
+6.1 Backup types and commands
+Common commands (run as postgres inside the container):
+​
+
+Full backup:
+
+pgbackrest --stanza=main --type=full backup
+
+Differential backup:
+
+pgbackrest --stanza=main --type=diff backup
+
+Incremental backup:
+
+pgbackrest --stanza=main --type=incr backup
+
+6.2 Ansible playbook for backups
+Create playbooks/backup_pg.yml that:
+
+Targets the Docker host group (e.g. db_servers).
+
+Includes role pgbackrest with tasks/backup.yml.
+
+Accepts variables:
+
+backup_type (default: incr).
+
+backup_stanza (default: main).
+
+Role pgbackrest/tasks/backup.yml:
+
+Construct the command based on vars, e.g. pgbackrest --stanza={{ backup_stanza }} --type={{ backup_type }} backup.
+
+Use docker exec via Ansible to run it as postgres.
+
+Optionally:
+
+Capture output, log to Ansible, and fail if return code is non‑zero.
+
+After successful backup, run pgbackrest info to list backup status and store as artifact.
+​
+
+6.3 Scheduling backups
+You have two main options:
+
+External scheduler:
+
+Use a CI tool or cron on the Ansible control host to run ansible-playbook backup_pg.yml -e "backup_type=incr" every N minutes.
+
+On the Docker host:
+
+Ansible creates cron entries or systemd timers that call a wrapper script.
+
+That script in turn runs docker exec postgres-pgbackrest pgbackrest ... backup.
+
+External scheduling is often simpler because you keep logic in one place.
+
+7. Automate restores with Ansible (container scenario)
+Restores in Docker require extra care because restoring into a running instance is not supported by pgBackRest; you must stop PostgreSQL and work on the data directory.
+
+7.1 Decide restore strategy
+Common restore scenarios:
+
+Restore latest backup (full + WALs) into same container.
+
+Restore to a new container (cloning for testing).
+
+Point‑in‑time recovery (PITR) to a specific timestamp.
+​
+
+Key decisions:
+
+Restore in place:
+
+Stop the existing container.
+
+Move or clear pgdata volume content.
+
+Run pgBackRest restore into this volume.
+
+Start container again.
+
+Restore to clone:
+
+Create a new volume pgdata_restore.
+
+Run pgbackrest --db-path=/var/lib/postgresql/restore ... restore mapping to that volume.
+
+Start a new container using that volume and a different port.
+
+7.2 General in‑place restore steps (conceptual)
+For in‑place restore of an existing database:
+
+Stop the PostgreSQL container:
+
+Ansible uses community.docker.docker_container with state: stopped.
+
+Rename or clean data directory in the pgdata volume:
+
+On the host, move pgdata content to pgdata_old for safety.
+
+Run pgBackRest restore inside a temporary container that has:
+
+The same pgBackRest repo volume.
+
+The pgdata volume mounted to the intended directory.
+
+pgbackrest binary and config.
+
+Command: pgbackrest --stanza=main --delta restore (for latest) or with PITR options.
+
+Start the PostgreSQL container again using the same pgdata volume.
+
+Check health: run psql or pg_isready via Ansible; fail the play if check fails.
+
+Most Docker users prefer to run restore in a dedicated helper container (not the main one), because the main container is off when the data directory is modified.
+
+7.3 Ansible restore playbook flow
+Create playbooks/restore_pg.yml with variables:
+
+restore_stanza: "main"
+
+restore_type: "default" (could be time, name, etc.).
+
+For PITR:
+
+restore_target_type: "time"
+
+restore_target: "2026-02-02 18:30:00+00".
+​
+
+Steps inside a pgbackrest/tasks/restore.yml:
+
+Stop original PG container (if in‑place)
+
+Use docker_container with state: stopped.
+
+Prepare data directory
+
+Use file module to move old data:
+
+mv /var/lib/docker/volumes/pgdata/_data /var/lib/docker/volumes/pgdata/_data_old (adapt path to your Docker runtime).
+
+Or use file with state: absent on path inside a helper container.
+
+Run restore container
+
+Create a temporary container, e.g. pgbackrest-restore:
+
+Same_IMAGE: myorg/postgres-pgbackrest:latest.
+
+Volumes:
+
+pgbackrest_repo → /var/lib/pgbackrest.
+
+pgdata → /var/lib/postgresql/data.
+
+pgbackrest_conf → /etc/pgbackrest.
+
+Command for latest restore:
+
+pgbackrest --stanza=main --delta restore.
+
+For PITR:
+
+pgbackrest --stanza=main --type=time --target='{{ restore_target }}' --delta restore.
+​
+
+Run container with restart_policy: "no" and wait for it to exit.
+
+Check container exit code; if non‑zero, fail the play.
+
+Remove restore helper container
+
+Clean up to avoid clutter.
+
+Start PostgreSQL container
+
+Bring back the original container with the now‑restored pgdata volume.
+
+Ensure environment variables and ports are identical.
+
+Health checks
+
+Use shell: docker exec postgres-pgbackrest pg_isready until it succeeds.
+
+Optionally run a small psql query to verify data (e.g., SELECT count(*) FROM some_table if you know what to check).
+
+8. Implementing PITR options
+pgBackRest supports several restore types; expose them as Ansible variables so you can flexibly choose.
+
+Common options:
+
+To restore to specific time:
+
+pgbackrest --stanza=main --type=time --target="2026-02-02 18:30:00+00" --delta restore.
+​
+
+To restore to specific backup:
+
+pgbackrest --stanza=main --set=20260202-1830F --delta restore.
+
+In your restore role, map Ansible vars to pgBackRest options:
+
+If restore_target_type == 'time':
+
+Build opts: "--type=time --target='{{ restore_target }}'".
+
+If restore_target_type == 'name':
+
+Build opts: "--set={{ restore_target }}".
+
+Always include --delta unless you want to overwrite everything unconditionally.
+​
+
+9. Example end‑to‑end flows
+Putting it all together, here are two concrete “from Ansible” workflows.
+
+9.1 Provision + initial backup
+ansible-playbook deploy_pg.yml
+
+Builds image, creates volumes, runs PG+pgBackRest container.
+
+Renders postgresql.conf, pg_hba.conf, pgbackrest.conf.
+
+Restart container to apply PG config.
+
+Runs pgbackrest --stanza=main check once.
+​
+
+ansible-playbook backup_pg.yml -e "backup_type=full"
+
+Executes full backup command inside container.
+
+On success, pgbackrest info is logged.
+​
+
+Schedule periodic incremental backups by calling backup_pg.yml -e "backup_type=incr" from cron or CI.
+
+9.2 Disaster restore (latest backup, same host)
+Stop production container with Ansible (state: stopped).
+
+Rename pgdata content to pgdata_old.
+
+Run restore_pg.yml:
+
+Starts helper container, runs pgbackrest --stanza=main --delta restore.
+
+Removes helper container.
+
+Start production container again.
+
+Run verification tasks.
+
+10. Key operational tips
+A few important reliability points you should enforce:
+
+Keep pgBackRest repository off the same physical disk as PGDATA if possible; Docker volumes can be placed on different disks or network storage.
+
+Always keep at least one full backup + WALs sufficient for your retention policy; configure repo1-retention-full and repo1-retention-diff appropriately.
+​
+
+Test restores regularly in a separate environment using a clone container; never assume backup is valid until a restore test passes.
+
+Version lock PostgreSQL and pgBackRest so you can recreate containers deterministically from Dockerfiles and Ansible roles.
+
+If you share your current Docker Compose (or run) commands and directory layout, I can help you turn this design into concrete Ansible role snippets and example playbooks.
